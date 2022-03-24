@@ -1,0 +1,19 @@
+job.type: search
+search.type: grid
+
+dataset.name: wnrr
+model: complex
+valid.metric: mean_reciprocal_rank_filtered
+
+grid_search:
+  parameters:
+   
+
+  
+
+
+
+
+
+
+  

@@ -1,0 +1,13 @@
+job.type: search
+dataset.name: sampled_wnrr_0.01
+
+import:
+- autosf
+- conve
+- reciprocal_relations_model
+model: autosf
+
+search.type: batch_trainer
+
+batch_trainer:
+  data_choice: wnrr

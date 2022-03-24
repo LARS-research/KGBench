@@ -1,0 +1,10 @@
+dataset:
+  files.test.filename: test.del
+  files.test.split_type: test
+  files.test.type: triples
+  files.train.filename: train.del
+  files.train.split_type: train
+  files.train.type: triples
+  files.valid.filename: valid.del
+  files.valid.split_type: valid
+  files.valid.type: triples

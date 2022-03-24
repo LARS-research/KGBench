@@ -1,0 +1,3 @@
+[console_scripts]
+kge = kge.cli:main
+

@@ -1,0 +1,20 @@
+job.type: search
+dataset.name: fb15k-237
+
+train.optimizer.default.type: Adagrad
+model: complex
+
+search.type: consistency_analysing
+consistency_analysing:
+  num_trials: 6
+  sampled_ratio: 0.01
+  parameters:
+    - name: train.optimizer.default.args.lr
+      type: range
+      bounds: [0.0, 1.0]
+    - name: train.optimizer.default.args.weight_decay
+      type: log
+      bounds: [1.0e-8, 1.0]
+    - name: lookup_embedder.dim
+      type: choice
+      bounds: [10, 50]
