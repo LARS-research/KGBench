@@ -1,0 +1,14 @@
+import: [lookup_embedder]
+
+autosf:
+  class_name: AutoSF
+  entity_embedder:
+    type: lookup_embedder
+    +++: +++
+  relation_embedder:
+    type: lookup_embedder
+    +++: +++
+  A: [1,0,0,0, 0,2,0,0, 0,0,3,0, 0,0,0,4]
+  K: 4
+
+
