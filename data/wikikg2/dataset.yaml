@@ -1,0 +1,18 @@
+dataset:
+  files.test.filename: test.del
+  files.test.size: 598543
+  files.test.split_type: test
+  files.test.type: triples_and_negs
+  files.test.neg_for_eval: 1000
+  files.train.filename: train.del
+  files.train.size: 16109182
+  files.train.split_type: train
+  files.train.type: triples
+  files.valid.filename: valid.del
+  files.valid.size: 429456
+  files.valid.split_type: valid
+  files.valid.type: triples_and_negs
+  files.valid.neg_for_eval: 1000
+  name: wikikg2
+  num_entities: 2500604
+  num_relations: 535
