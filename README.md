@@ -7,7 +7,8 @@ README文档和代码有些部分还在更新。
 
 
 ```sh
-# 安装libKGE使用的命令行
+# 配置环境
+cd KGBench
 pip install -e .
 cd..
 

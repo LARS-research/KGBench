@@ -502,9 +502,6 @@ class EntityRankingJob(EvaluationJob):
                 dict(epoch_time=epoch_time, event="eval_completed", **metrics,)
             )
 
-            print("self.current_trace", self.current_trace)
-            input()
-
         else:
 
             # create initial trace entry
