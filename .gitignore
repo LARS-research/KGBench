@@ -2,3 +2,4 @@
 /data
 /toss/results
 /examples
+*.pyc
