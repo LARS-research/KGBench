@@ -679,7 +679,7 @@ num_ties for each true score.
 
     def _get_ranks_and_num_ties(
         self, scores: torch.Tensor, true_scores: torch.Tensor
-    ) -> tuple(torch.Tensor, torch.Tensor):
+    ) -> tuple((torch.Tensor, torch.Tensor)):
         """Returns rank and number of ties of each true score in scores.
 
         :param scores: batch_size x entities tensor of scores
