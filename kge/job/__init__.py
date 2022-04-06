@@ -15,7 +15,7 @@ from kge.job.search_manual import ManualSearchJob
 from kge.job.search_auto import AutoSearchJob
 from kge.job.search_ax import AxSearchJob
 from kge.job.search_sf import SFSearchJob
-from kge.job.consistency_analysing import ConsistencyAnalysing
+from kge.job.subgraph_sample import SubgraphSample
 from kge.job.batch_trainer import BatchTrainer
 from kge.job.toss1 import TOSS1
 from kge.job.toss2 import TOSS2

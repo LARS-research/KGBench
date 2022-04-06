@@ -22,6 +22,8 @@ class TrainingJobNegativeSampling(TrainingJob):
         self._sampler = KgeSampler.create(config, "negative_sampling", dataset)
         self.type_str = "negative_sampling"
 
+        self.weights = config.get("negative_sampling.weights")
+
         if self.__class__ == TrainingJobNegativeSampling:
             for f in Job.job_created_hooks:
                 f(self)
@@ -154,7 +156,7 @@ class TrainingJobNegativeSampling(TrainingJob):
             loss_value_torch = (
                 self.loss(scores, labels[slot], num_negatives=num_samples) / batch_size
             )
-            result.avg_loss += loss_value_torch.item()
+            result.avg_loss += self.weights[SLOT_STR[slot]] * loss_value_torch.item()
             result.forward_time += time.time()
 
             # backward pass for this slot in the subbatch

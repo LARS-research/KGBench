@@ -57,7 +57,8 @@ class Dataset(Configurable):
         #: split-name to (n,3) int32 tensor
         self._triples: Dict[str, Tensor] = {}
 
-        self._triple_negs: Dict[str, Tensor] = {}
+        self._head_negs: Dict[str, Tensor] = {}
+        self._tail_negs: Dict[str, Tensor] = {}
 
         #: meta data that is part if this dataset. Indexed by key.
         self._meta: Dict[str, Any] = {}
@@ -196,36 +197,44 @@ class Dataset(Configurable):
             Dataset._pickle_dump_atomic(triples, pickle_filename)
         return triples
 
-    def _load_triples_and_negs(filename: str, delimiter="\t", use_pickle=False, neg_for_eval=0) -> tuple(Tensor, Tensor):
+    def _load_triples_and_negs(filename: str, delimiter="\t", use_pickle=False, neg_for_head=0, neg_for_tail=0) -> tuple(Tensor, Tensor):
         if use_pickle:
             # check if there is a pickled, up-to-date version of the file
             pickle_suffix = Dataset._to_valid_filename(f"-{delimiter}.pckl")
 
             pickle_filename = filename + pickle_suffix
-            pickle_negs_filename = filename + 'negs' + pickle_suffix
+            pickle_head_negs_filename = filename + 'headnegs' + pickle_suffix
+            pickle_tail_negs_filename = filename + 'tailnegs' + pickle_suffix
+
 
             triples = Dataset._pickle_load_if_uptodate(None, pickle_filename, filename)
-            triple_negs = Dataset._pickle_load_if_uptodate(None, pickle_negs_filename, filename)
+            head_negs = Dataset._pickle_load_if_uptodate(None, pickle_head_negs_filename, filename)
+            tail_negs = Dataset._pickle_load_if_uptodate(None, pickle_tail_negs_filename, filename)
 
-            if (triples is not None) and (triple_negs is not None):
-                return triples, triple_negs
+            if (triples is not None) and (head_negs is not None) and (tail_negs is not None):
+                return triples, head_negs, tail_negs
         
         # numpy loadtxt is very slow, use pandas instead
         triples = pd.read_csv(
             filename, sep=delimiter, dtype=np.int32, header=None, usecols=range(0, 3)
         ).to_numpy()
-        triple_negs = pd.read_csv(
-            filename, sep=delimiter, dtype=np.int32, header=None, usecols=range(3, 3 + neg_for_eval)
+        head_negs = pd.read_csv(
+            filename, sep=delimiter, dtype=np.int32, header=None, usecols=range(3, 3 + neg_for_head)
+        ).to_numpy()
+        tail_negs = pd.read_csv(
+            filename, sep=delimiter, dtype=np.int32, header=None, usecols=range(3 + neg_for_head, 3 + neg_for_head + neg_for_tail)
         ).to_numpy()
 
         triples = torch.from_numpy(triples)
-        triple_negs = torch.from_numpy(triple_negs)
+        head_negs = torch.from_numpy(head_negs)
+        tail_negs = torch.from_numpy(tail_negs)
 
         if use_pickle:
             Dataset._pickle_dump_atomic(triples, pickle_filename)
-            Dataset._pickle_dump_atomic(triple_negs, pickle_negs_filename)
+            Dataset._pickle_dump_atomic(head_negs, pickle_head_negs_filename)
+            Dataset._pickle_dump_atomic(tail_negs, pickle_tail_negs_filename)
 
-        return triples, triple_negs
+        return triples, head_negs, tail_negs
         
 
 
@@ -248,17 +257,17 @@ class Dataset(Configurable):
                 self._triples[key] = triples  
                 self.config.log(f"Loaded {len(triples)} {key} triples")
             else:
-                neg4eval = self.config.get(f"dataset.files.{key}.neg_for_eval")
-                triples, triple_negs = Dataset._load_triples_and_negs(
+                triples, head_negs, tail_negs = Dataset._load_triples_and_negs(
                     os.path.join(self.folder, filename),
                     use_pickle=self.config.get("dataset.pickle"),
-                    neg_for_eval=neg4eval
+                    neg_for_head=self.config.get(f"dataset.files.{key}.neg_for_head"),
+                    neg_for_tail=self.config.get(f"dataset.files.{key}.neg_for_tail")
                 )
 
                 self._triples[key] = triples
-                self._triple_negs[key] = triple_negs
+                self._head_negs[key] = head_negs
+                self._tail_negs[key] = tail_negs
                 self.config.log(f"Loaded {len(triples)} {key} triples")
-                self.config.log(f"Loaded {len(triple_negs)} {key} triple negs")
             
         return self._triples[key]
 

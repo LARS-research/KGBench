@@ -350,6 +350,10 @@ negative_sampling:
     p: 0          # -1 means: same as s
     o: -1         # -1 means: same as s
 
+  weights:
+    s: 1.0
+    p: 0.0
+    o: 1.0
   # Whether to resample corrupted triples that occur in the training data (and
   # are hence positives). Can be set separately for each slot.
   filtering:
@@ -637,14 +641,14 @@ sf_search:
   parameters: 
     +++: +++
 
-consistency_analysing:
-  class_name: ConsistencyAnalysing
+subgraph_sample:
+  class_name: SubgraphSample
 
   run: true
 
   sampled_ratio: 0.2
 
-  num_trials: 10
+  num_trials: 0
 
   num_starts: 1
 

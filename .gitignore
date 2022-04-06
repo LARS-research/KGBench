@@ -1,5 +1,7 @@
 /local/experiments
 /data
-/toss/results
+/dataset
+/toss
 /examples
 *.pyc
+*__pycache__/

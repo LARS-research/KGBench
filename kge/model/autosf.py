@@ -93,6 +93,32 @@ class AutoSFScorer(RelationalScorer):
 
         return (mult_part.unsqueeze(dim=2) * (o_emb.transpose(1,2))).sum(dim=1)
 
+    def score_emb_po_given_negs(self, s_emb: torch.Tensor , p_emb: torch.Tensor, o_emb: torch.Tensor):
+        """ 
+            s_emb: batch_size * negs * dim
+            p_emb: batch_size * dim
+            o_emb: batch_size * dim
+         """
+
+        n = p_emb.size(0)
+
+        o_emb_chunk = o_emb.chunk(self.K, dim=-1)
+        p_emb_chunk = p_emb.chunk(self.K, dim=-1)
+        
+        A_np = np.array(self.A)
+        A_np_notzero = np.flatnonzero(A_np)
+
+        mult_part = torch.zeros(n, p_emb.size(1)).view(n, self.K, -1).to(self.config.get("job.device"))
+        for idx in A_np_notzero:
+            ii = idx // self.K  # row: s
+            jj = idx % self.K   # column: o
+            A_ij = A_np[idx]
+            mult_part[:,ii] += np.sign(A_ij) * (o_emb_chunk[jj] * p_emb_chunk[abs(A_ij)-1])
+        mult_part = mult_part.view(n, -1)
+
+        return (mult_part.unsqueeze(dim=2) * (s_emb.transpose(1,2))).sum(dim=1)
+
+
 
 class AutoSF(KgeModel):
     def __init__(

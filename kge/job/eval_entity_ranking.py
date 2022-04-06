@@ -31,16 +31,6 @@ class EntityRankingJob(EvaluationJob):
         if self.eval_split not in self.filter_splits:
             self.filter_splits.append(self.eval_split)
 
-        # self.biokg = (config.get("dataset.name") == 'biokg')
-        # self.wikikg2 = (config.get("dataset.name") == 'wikikg2')
-
-        # if self.biokg:
-        #     with open("data/biokg/valid_neg.yaml") as f:
-        #         self.eval_negset = yaml.full_load(f)['valid_neg']
-        # elif self.wikikg2:
-        #     with open("data/wikikg2/valid_neg.yaml") as f:
-        #         self.eval_negset = yaml.full_load(f)['valid_neg']
-
         max_k = min(
             self.dataset.num_entities(),
             max(self.config.get("entity_ranking.hits_at_k_s")),
@@ -524,32 +514,35 @@ class EntityRankingJob(EvaluationJob):
 
 
             num_entities = self.dataset.num_entities()
-            neg4eval = self.config.get("dataset.files."+ self.eval_split +".neg_for_eval")
+
+            neg_for_head = self.config.get("dataset.files."+ self.eval_split +".neg_for_head")
+            neg_for_tail = self.config.get("dataset.files."+ self.eval_split +".neg_for_tail")
+
             scores_pos = torch.empty(size=[0]).to(self.device)
-            scores_neg = torch.empty(size=[0, neg4eval]).to(self.device)
+            scores_neg = torch.empty(size=[0, neg_for_head + neg_for_tail]).to(self.device)
+            
             for batch_number, batch_coords in enumerate(self.loader):
                 batch = batch_coords[0].to(self.device)
                 s, p, o = batch[:, 0], batch[:, 1], batch[:, 2]
 
-                o_negs = self.dataset._triple_negs[self.eval_split][batch_number * self.batch_size: (batch_number+1) * self.batch_size, :].to(self.device)
 
-                unique_o, unique_o_inverse = torch.unique(o, return_inverse=True)
-                batch_scores_pos = torch.gather(
-                    self.model.score_sp(s, p, unique_o),
-                    1,
-                    unique_o_inverse.view(-1, 1),
-                ).view(-1)
-                batch_scores_neg = self.model.score_sp_given_negs(s, p, o_negs)
-                scores_pos = torch.cat((scores_pos, batch_scores_pos), 0)
-                scores_neg = torch.cat((scores_neg, batch_scores_neg), 0)
+                s_negs = self.dataset._head_negs[self.eval_split][batch_number * self.batch_size: (batch_number+1) * self.batch_size, :].to(self.device)
+                o_negs = self.dataset._tail_negs[self.eval_split][batch_number * self.batch_size: (batch_number+1) * self.batch_size, :].to(self.device)
+                batch_scores_pos = self.model.score_spo(s, p, o)
+                batch_scores_head_neg = self.model.score_po_given_negs(s_negs, p, o)
+                batch_scores_tail_neg = self.model.score_sp_given_negs(s, p, o_negs)
+                batch_scores_neg = torch.cat((batch_scores_head_neg, batch_scores_tail_neg), dim=1)
+                scores_pos = torch.cat((scores_pos, batch_scores_pos), dim=0)
+                scores_neg = torch.cat((scores_neg, batch_scores_neg), dim=0)
+
             if self.config.get("dataset.name") == 'biokg':
                 eval = Evaluator(name = 'ogbl-biokg')
                 result_dict = eval.eval({'y_pred_pos': scores_pos, 'y_pred_neg': scores_neg})
                 metrics = {
-                    'mean_reciprocal_rank' : float(result_dict['mrr_list'].mean()),
-                    'hits_at_1' : float(result_dict['hits@1_list'].mean()),
-                    'hits_at_3' : float(result_dict['hits@3_list'].mean()),
-                    'hits_at_10' : float(result_dict['hits@10_list'].mean())
+                    'mean_reciprocal_rank' : (result_dict['mrr_list'].mean().item()),
+                    'hits_at_1' : (result_dict['hits@1_list'].mean().item()),
+                    'hits_at_3' : (result_dict['hits@3_list'].mean().item()),
+                    'hits_at_10' : (result_dict['hits@10_list'].mean().item())
                 }
                 self.config.print(
                     (
@@ -567,14 +560,16 @@ class EntityRankingJob(EvaluationJob):
                     end="",
                     flush=True,
                 )
+                # input()
+
             elif self.config.get("dataset.name") == 'wikikg2':
                 eval = Evaluator(name = 'ogbl-wikikg2')
                 result_dict = eval.eval({'y_pred_pos': scores_pos, 'y_pred_neg': scores_neg})
                 metrics = {
-                    'mean_reciprocal_rank' : float(result_dict['mrr_list'].mean()),
-                    'hits_at_1' : float(result_dict['hits@1_list'].mean()),
-                    'hits_at_3' : float(result_dict['hits@3_list'].mean()),
-                    'hits_at_10' : float(result_dict['hits@10_list'].mean())
+                    'mean_reciprocal_rank' : (result_dict['mrr_list'].mean().item()),
+                    'hits_at_1' : (result_dict['hits@1_list'].mean().item()),
+                    'hits_at_3' : (result_dict['hits@3_list'].mean().item()),
+                    'hits_at_10' : (result_dict['hits@10_list'].mean().item())
                 }
                 self.config.print(
                     (
@@ -684,7 +679,7 @@ num_ties for each true score.
 
     def _get_ranks_and_num_ties(
         self, scores: torch.Tensor, true_scores: torch.Tensor
-    ) -> (torch.Tensor, torch.Tensor):
+    ) -> tuple(torch.Tensor, torch.Tensor):
         """Returns rank and number of ties of each true score in scores.
 
         :param scores: batch_size x entities tensor of scores

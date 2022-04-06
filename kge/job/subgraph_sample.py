@@ -1,4 +1,3 @@
-import argparse
 import os
 from kge.job import AutoSearchJob, Job
 from kge import Config
@@ -16,26 +15,128 @@ import pandas as pd
 import yaml
 import math
 
+class SubgraphSample(AutoSearchJob):
+    def __init__(self, config, dataset, parent_job=None):
+        super().__init__(config, dataset, parent_job)
+        self.sample_ratio = self.config.get("subgraph_sample.sampled_ratio")
+        self.num_trials = self.config.get("subgraph_sample.num_trials")
+        self.num_starts = self.config.get("subgraph_sample.num_starts")
+        self.repeat = self.config.get("subgraph_sample.repeat")
+        self.dataset_name = self.config.get("dataset.name")
+        self.parameters_config = self.config.get("subgraph_sample.parameters")
 
-def parse_args(args=None):
-    parser = argparse.ArgumentParser(
-        description='Training and Testing Knowledge Graph Embedding Models',
-        usage='train.py [<args>] [-h | --help]'
-    )
+        # self.structure_genarator_mode = self.config.get("sf_search.structure_genarator_mode")
+        # self.prob = self.config.get("sf_search.prob")
+        # self.K = self.config.get("sf_search.K")
 
-    parser.add_argument('-dataset', type=str, default='wnrr', help='dataset name')
-    parser.add_argument('-sample_ratio', type=float, default=0.2, help='sample ratio')
-    parser.add_argument('-addInverseRelation', action='store_false')
-    parser.add_argument('-repeat', type=int, default=0)
-    parser.add_argument('-num_starts', type=int, default=1)
+        if self.__class__ == SubgraphSample:
+            for f in Job.job_created_hooks:
+                f(self)
 
-    return parser.parse_args(args)
+        args = { }
+        args['sample_ratio'] = self.sample_ratio
+        args['dataset'] = self.dataset_name
+        args['addInverseRelation'] = False
+
+        print('preparing training data ...')
+        pklFile = os.path.join('./data', self.dataset_name, 'datasetInfo.pkl')
+        if os.path.exists(pklFile):
+            datasetInfo = pkl.load(open(pklFile, 'rb')) 
+        else:
+            args['addInverseRelation'] = False
+            datasetInfo = prepareData(args)
+            pkl.dump(datasetInfo, open(pklFile, "wb"), protocol=4)
+        print('==> finish loading dataset')
+
+        nentity       = datasetInfo['nentity']
+        nrelation     = datasetInfo['nrelation']
+        # sample_ratio  = args.sample_ratio
+        # num_starts    = args.num_starts
+        savePath      = "./data"
+        ori_train_triples = datasetInfo['train_triples']
+        train_triples = []
+
+        
+        if args['dataset'] in ['biokg', 'wikikg2', 'ogbl-biokg', 'ogbl-wikikg2']:
+            for idx in tqdm(range(len(ori_train_triples['head']))):
+                head, relation, tail = ori_train_triples['head'][idx], ori_train_triples['relation'][idx], ori_train_triples['tail'][idx]
+                if relation < nrelation:
+                    train_triples.append((head, relation, tail))
+        else:
+            for head, relation, tail in tqdm(ori_train_triples):
+                if relation < nrelation:
+                    train_triples.append((head, relation, tail))
+
+        if self.repeat == 0:
+            self.sampled_dataset = KGGenerator(self.dataset_name, train_triples, self.sample_ratio, self.num_starts, savePath).sampled_dataset
+        else:
+            for repeat_num in range(1, self.repeat+1):
+               self.sampled_dataset = KGGenerator(self.dataset_name, train_triples, self.sample_ratio, self.num_starts, savePath, repeat_num=repeat_num).sampled_dataset 
+
+        self.trial_id = -1
+        self.exp_config = {}
+        self.record_sampled = []
+        self.record_whole = []
+        
+    def register_trial(self, parameters=None):
+        # parameters: 优化参数的字典
+        # trail_id: 训练次数, int
+        return {}, 0
+
+
+    def register_trial_result(self, trial_id, parameters, trace_entry):
+        # trace_entry["metric_value"]: MRR, float
+        # parameters: 优化参数的字典
+        pass
+
+
+    def get_best_parameters(self):
+        # 仅仅是继承了这个函数名，实际功能为输出实验结果
+        # print("mrr on sampled graph: ", self.record_sampled)
+        # print("mrr on whole graph: ", self.record_whole)
+        # num_exps = len(record_s)
+        # # record_s = np.array(self.record_sampled)
+        # # record_s_arg = np.argsort(record_s)
+        # # sampled_ranking = np.zeros(num_exps)
+        # # for idx in range(num_exps):
+        # #     sampled_ranking[record_s_arg[idx]] = idx
+        # # record_w = np.array(self.record_whole)
+        # # record_w_arg = np.argsort(record_w)
+        # # whole_ranking = np.zeros(num_exps)
+        # # for idx in range(num_exps):
+        # #     whole_ranking[record_w_arg[idx]] = idx
+        # # print("config rank on sampled graph: ", sampled_ranking)
+        # # print("config rank on whole graph: ", whole_ranking)
+        # # srcc = 1 - abs(sampled_ranking - whole_ranking).sum()/(num_exps*(num_exps**2-1))
+        # df = pd.DataFrame({'whole': self.record_whole, 'sampled': self.record_sampled})
+        # print("srcc: ", df.corr('spearman'))
+        # self.config.log(
+        #                 "mrr on sampled graph: {}\n mrr on whole graph:{}\n srcc:{}".format(
+        #                     self.record_sampled, self.record_whole, srcc
+        #                 )
+        #             )
+        pass
+
+    # def ramdom_config_genarator(self):
+    #     new_config = {}
+    #     for idx in range(len(self.parameters_config)):
+    #         bound = self.parameters_config[idx]['bounds'] 
+    #         if self.parameters_config[idx]['type'] == 'log':
+    #             new_config[self.parameters_config[idx]['name']] = math.exp(random.uniform(math.log(bound[0]), math.log(bound[1])))
+    #         elif self.parameters_config[idx]['type'] == 'range':
+    #             new_config[self.parameters_config[idx]['name']] = random.uniform(bound[0], bound[1])
+    #         elif self.parameters_config[idx]['type'] == 'choice':
+    #             new_config[self.parameters_config[idx]['name']] = bound[random.randint(0, len(bound)-1)]
+    #         else:
+    #             new_config[self.parameters_config[idx]['name']] = bound[0]
+    #     return new_config
+    
 
 
 class KGGenerator:
     def __init__(self, dataset, all_triples, sample_ratio, num_starts, savePath, repeat_num=0, split_ratio=[0.9, 0.05, 0.05]):        
         self.split_ratio  = split_ratio
-        args.sample_ratio = sample_ratio
+        self.sample_ratio = sample_ratio
         self.repeat_num   = repeat_num
         self.num_starts   = num_starts
         self.dataset      = dataset
@@ -46,7 +147,7 @@ class KGGenerator:
 
         # sampling via random walk
         num_nodes = homoGraph.number_of_nodes()
-        target_num_nodes = int(num_nodes * args.sample_ratio)
+        target_num_nodes = int(num_nodes * self.sample_ratio)
         if num_starts == 1:
             sampled_nodes = self.random_walk_induced_graph_sampling(homoGraph, target_num_nodes)
         else:
@@ -89,7 +190,7 @@ class KGGenerator:
         self.relation_mapping_dict = {}
 
         print('dataset={}, nentity={}, sampled ratio={}, sparsity={}'.format(
-            self.dataset, self.nentity, args.sample_ratio, self.sparsity))
+            self.dataset, self.nentity, self.sample_ratio, self.sparsity))
 
         # key:   origin index
         # value: new assigned index
@@ -220,15 +321,15 @@ class KGGenerator:
     def saveData(self, savePath):
         if self.repeat_num == 0:
             if self.num_starts == 1:
-                folder = 'sampled_{}_{}'.format(self.dataset, args.sample_ratio)
+                folder = 'sampled_{}_{}'.format(self.dataset, self.sample_ratio)
             else:
-                folder = 'sampled_{}_{}_starts_{}'.format(self.dataset, args.sample_ratio, self.num_starts)
+                folder = 'sampled_{}_{}_starts_{}'.format(self.dataset, self.sample_ratio, self.num_starts)
         else:
-            # folder = 'sampled_{}_{}_rp{}'.format(args.dataset, args.sample_ratio, self.repeat_num)
+            # folder = 'sampled_{}_{}_rp{}'.format(args['dataset'], self.sample_ratio, self.repeat_num)
             if self.num_starts == 1:
-                folder = 'sampled_{}_{}_rp{}'.format(self.dataset, args.sample_ratio, self.repeat_num)
+                folder = 'sampled_{}_{}_rp{}'.format(self.dataset, self.sample_ratio, self.repeat_num)
             else:
-                folder = 'sampled_{}_{}_starts_{}_rp{}'.format(self.dataset, args.sample_ratio, self.num_starts, self.repeat_num)
+                folder = 'sampled_{}_{}_starts_{}_rp{}'.format(self.dataset, self.sample_ratio, self.num_starts, self.repeat_num)
 
         saveFolder = os.path.join(savePath, folder)
         # saveFolder = saveFolder.replace('-', '_')
@@ -271,7 +372,7 @@ class KGGenerator:
         f.close()
 
         ## TODO: There is a bug, but it doesn't matter
-        ## 这里直接复制了ids的前若干行，这是不对的，但是对实验应该没有影响
+        ## 这里直接复制了ids的前若干行，这是不对的，但是对实验没有影响
         fin = open(os.path.join(savePath, self.dataset, 'entity_ids.del'), 'r')
         fout = open(os.path.join(saveFolder, 'entity_ids.del'), 'w')
         for ent in range(self.nentity): 
@@ -302,6 +403,113 @@ class KGGenerator:
         fyaml_write.close()
 
         return folder
+
+
+
+def addInverseTriplesForOgblBiokg(triples, nrelation, dictConstant, withNegSamples=False):
+    count, true_tail = defaultdict(dictConstant), defaultdict(list)
+    inv_heads      = []
+    inv_relations  = []
+    inv_tails      = []
+    inv_head_types = []
+    inv_tail_types = []
+    head_neg_list  = []
+    tail_neg_list  = []
+
+    # counting
+    for i in tqdm(range(len(triples['head']))):
+        head, relation, tail = triples['head'][i], triples['relation'][i], triples['tail'][i]
+        head_type, tail_type = triples['head_type'][i], triples['tail_type'][i]
+
+        if withNegSamples:
+            head_neg, tail_neg = triples['head_neg'][i], triples['tail_neg'][i]
+            head_neg_list.append(tail_neg)
+            tail_neg_list.append(head_neg)
+
+        # add inverse relation 
+        inv_head, inv_relation, inv_tail = tail, relation + nrelation, head
+        inv_head_type, inv_tail_type     = tail_type, head_type
+
+        # counting
+        count[(head, relation, head_type)] += 1
+        count[(inv_head, inv_relation, inv_head_type)] += 1
+
+        # get head/tail peers
+        true_tail[(head, relation)].append(tail)
+        true_tail[(inv_head, inv_relation)].append(inv_tail)
+
+        inv_heads.append(inv_head)
+        inv_relations.append(inv_relation)
+        inv_tails.append(inv_tail)
+        inv_head_types.append(inv_head_type)
+        inv_tail_types.append(inv_tail_type)
+
+    # append inverse triples to train set 
+    triples['head']      = np.append(triples['head'],      inv_heads)
+    triples['relation']  = np.append(triples['relation'],  inv_relations)
+    triples['tail']      = np.append(triples['tail'],      inv_tails)
+    triples['head_type'] = np.append(triples['head_type'], inv_head_types)
+    triples['tail_type'] = np.append(triples['tail_type'], inv_tail_types)
+
+    if withNegSamples:
+        # print(triples['head_neg'].shape, np.array(head_neg_list).shape); exit()
+        head_neg_list, tail_neg_list = np.array(head_neg_list), np.array(tail_neg_list)
+        print(triples['head_neg'].shape, triples['tail_neg'].shape)
+        triples['head_neg'] = np.concatenate([triples['head_neg'], head_neg_list])
+        triples['tail_neg'] = np.concatenate([triples['tail_neg'], tail_neg_list])
+        print(triples['head_neg'].shape, triples['tail_neg'].shape)
+
+    # return triples, true_tail, count
+    return triples
+
+
+def addInverseTriplesForOgblWikikg2(triples, nrelation, dictConstant, withNegSamples=False):
+    count, true_tail = defaultdict(dictConstant), defaultdict(list)
+    inv_heads      = []
+    inv_relations  = []
+    inv_tails      = []
+    head_neg_list  = []
+    tail_neg_list  = []
+
+    # counting
+    for i in tqdm(range(len(triples['head']))):
+        head, relation, tail = triples['head'][i], triples['relation'][i], triples['tail'][i]
+
+        if withNegSamples:
+            head_neg, tail_neg = triples['head_neg'][i], triples['tail_neg'][i]
+            head_neg_list.append(tail_neg)
+            tail_neg_list.append(head_neg)
+
+        # add inverse relation 
+        inv_head, inv_relation, inv_tail = tail, relation + nrelation, head
+
+        # counting
+        count[(head, relation)] += 1
+        count[(inv_head, inv_relation)] += 1
+
+        # get head/tail peers
+        true_tail[(head, relation)].append(tail)
+        true_tail[(inv_head, inv_relation)].append(inv_tail)
+
+        inv_heads.append(inv_head)
+        inv_relations.append(inv_relation)
+        inv_tails.append(inv_tail)
+
+    # append inverse triples to train set 
+    triples['head']      = np.append(triples['head'],      inv_heads)
+    triples['relation']  = np.append(triples['relation'],  inv_relations)
+    triples['tail']      = np.append(triples['tail'],      inv_tails)
+
+    if withNegSamples:
+        # print(triples['head_neg'].shape, np.array(head_neg_list).shape); exit()
+        head_neg_list, tail_neg_list = np.array(head_neg_list), np.array(tail_neg_list)
+        print(triples['head_neg'].shape, triples['tail_neg'].shape)
+        triples['head_neg'] = np.concatenate([triples['head_neg'], head_neg_list])
+        triples['tail_neg'] = np.concatenate([triples['tail_neg'], tail_neg_list])
+        print(triples['head_neg'].shape, triples['tail_neg'].shape)
+
+    # return triples, true_tail, count
+    return triples
 
 
 
@@ -445,20 +653,21 @@ def loadData(loadPath):
 
 def prepareData(args):
     datasetInfo, entity_dict, all_true_triples = dict(), dict(), dict()
-    addInverseRelation_flag = args.addInverseRelation
+    addInverseRelation_flag = args['addInverseRelation']
 
     def dictConstant():
         return 4
     
     ###### load OGB datasets ######
-    '''
-    if args.dataset in ['ogbl-biokg', 'ogbl-wikikg2']:
+    
+    if args['dataset'] in ['biokg', 'wikikg2']:
+        args['dataset'] = 'ogbl-' + args['dataset']
         from ogb.linkproppred import LinkPropPredDataset
-        dataset = LinkPropPredDataset(name = args.dataset)
+        dataset = LinkPropPredDataset(name = args['dataset'])
         split_edge = dataset.get_edge_split()
         train_triples, valid_triples, test_triples = split_edge["train"], split_edge["valid"], split_edge["test"]
 
-        if args.dataset == 'ogbl-biokg':
+        if args['dataset'] == 'ogbl-biokg':
             cur_idx = 0
             for key in dataset[0]['num_nodes_dict']:
                 entity_dict[key] = (cur_idx, cur_idx + dataset[0]['num_nodes_dict'][key])
@@ -509,7 +718,7 @@ def prepareData(args):
             indexing_tail = train_true_tail
             train_count   = count
 
-        elif args.dataset == 'ogbl-wikikg2':
+        elif args['dataset'] == 'ogbl-wikikg2':
             nentity       = dataset.graph['num_nodes']
             nrelation     = int(max(dataset.graph['edge_reltype'])[0]) + 1
             valid_triples = addInverseTriplesForOgblWikikg2(valid_triples, nrelation, dictConstant, withNegSamples=True)
@@ -535,7 +744,7 @@ def prepareData(args):
             indexing_tail = {}
             train_count   = count
 
-    '''
+    
             # too costing
             # indexing_tail = []
             # for i in tqdm(range(len(train_triples['head']))):
@@ -552,14 +761,14 @@ def prepareData(args):
 
     
     ###### load other datasets: wn18(rr) fb15k(237) ######
-    if args.dataset in ['wn18', 'wnrr', 'FB15k', 'fb15k-237', 'YAGO3_10', 'umls', 'kinship', 'family']:
-        with open(os.path.join("./data", args.dataset, 'entity_ids.del')) as fin:
+    elif args['dataset'] in ['wn18', 'wnrr', 'FB15k', 'fb15k-237', 'YAGO3_10', 'umls', 'kinship', 'family', 'toy']:
+        with open(os.path.join("./data", args['dataset'], 'entity_ids.del')) as fin:
             entity2id = dict()
             for line in fin:
                 eid, entity = line.strip().split('\t')
                 entity2id[entity] = int(eid)
 
-        with open(os.path.join("./data", args.dataset, 'relation_ids.del')) as fin:
+        with open(os.path.join("./data", args['dataset'], 'relation_ids.del')) as fin:
             relation2id = dict()
             for line in fin:
                 rid, relation = line.strip().split('\t')
@@ -569,9 +778,9 @@ def prepareData(args):
         nrelation         = len(relation2id)
         
         # augment train data via inverse relation
-        train_triples     = read_triple(os.path.join("./data", args.dataset, 'train.txt'), entity2id, relation2id, nrelation, addInverseRelation_flag)
-        valid_triples     = read_triple(os.path.join("./data", args.dataset, 'valid.txt'), entity2id, relation2id, nrelation, addInverseRelation_flag)
-        test_triples      = read_triple(os.path.join("./data", args.dataset, 'test.txt'),  entity2id, relation2id, nrelation, addInverseRelation_flag)
+        train_triples     = read_triple(os.path.join("./data", args['dataset'], 'train.txt'), entity2id, relation2id, nrelation, addInverseRelation_flag)
+        valid_triples     = read_triple(os.path.join("./data", args['dataset'], 'valid.txt'), entity2id, relation2id, nrelation, addInverseRelation_flag)
+        test_triples      = read_triple(os.path.join("./data", args['dataset'], 'test.txt'),  entity2id, relation2id, nrelation, addInverseRelation_flag)
 
         # All true triples
         all_true_triples  = set(train_triples + valid_triples + test_triples)
@@ -589,10 +798,10 @@ def prepareData(args):
         test_negSamples   = getFilteredSamples(test_triples,  all_true_tail, nentity)
         # train_negSamples  = getFilteredSamples(train_triples, all_true_tail, nentity) # too costing
 
-    elif 'sampled_ogbl_wikikg2' in args.dataset:
+    elif 'sampled_ogbl_wikikg2' in args['dataset']:
         
         # loading synthetic data / other datasets
-        savePath = os.path.join("./data", args.dataset, 'dataset.pkl')
+        savePath = os.path.join("./data", args['dataset'], 'dataset.pkl')
         nentity, nrelation, train_triples, valid_triples, test_triples = loadData(savePath)
         nentity, nrelation = int(nentity), int(nrelation)
 
@@ -620,7 +829,7 @@ def prepareData(args):
     else: 
         
         # loading synthetic data / other datasets
-        savePath = os.path.join("./data", args.dataset, 'dataset.pkl')
+        savePath = os.path.join("./data", args['dataset'], 'dataset.pkl')
         nentity, nrelation, train_triples, valid_triples, test_triples = loadData(savePath)
         nentity, nrelation = int(nentity), int(nrelation)
 
@@ -642,7 +851,7 @@ def prepareData(args):
         train_count       = count_frequency(train_triples, nrelation, addInverseRelation=addInverseRelation_flag)
 
         # get negative samples for val/test set
-        if 'sampled_ogbl_wikikg2' in args.dataset:
+        if 'sampled_ogbl_wikikg2' in args['dataset']:
             valid_negSamples  = [] # too costing
             test_negSamples   = []
         else:
@@ -651,7 +860,7 @@ def prepareData(args):
             test_negSamples   = getFilteredSamples(test_triples,  all_true_tail, nentity)
 
 
-    datasetInfo['datasetName']      = args.dataset 
+    datasetInfo['datasetName']      = args['dataset'] 
     datasetInfo['entity_dict']      = entity_dict
     datasetInfo['nentity']          = nentity
     datasetInfo['nrelation']        = nrelation
@@ -661,54 +870,13 @@ def prepareData(args):
     datasetInfo['indexing_tail']    = indexing_tail
     # datasetInfo['train_true_tail']  = train_true_tail
     datasetInfo['train_count']      = train_count
-    datasetInfo['train_len']        = len(train_triples['head']) if args.dataset in ['ogbl-biokg', 'ogbl-wikikg2'] \
+    datasetInfo['train_len']        = len(train_triples['head']) if args['dataset'] in ['ogbl-biokg', 'ogbl-wikikg2'] \
                                         else len(train_triples)
 
-    if args.dataset not in ['ogbl-biokg', 'ogbl-wikikg2']:
+    if args['dataset'] not in ['ogbl-biokg', 'ogbl-wikikg2']:
         datasetInfo['valid_negSamples'] = valid_negSamples
         datasetInfo['test_negSamples']  = test_negSamples
         # datasetInfo['train_negSamples'] = train_negSamples
         datasetInfo['all_true_tail']    = all_true_tail
 
     return datasetInfo
-
-
-
-if __name__ == '__main__':
-    args = parse_args()
-
-    print('preparing training data ...')
-    pklFile = os.path.join('./data', args.dataset, 'datasetInfo.pkl')
-    if os.path.exists(pklFile):
-        datasetInfo = pkl.load(open(pklFile, 'rb')) 
-    else:
-        args.addInverseRelation = False
-        datasetInfo = prepareData(args)
-        pkl.dump(datasetInfo, open(pklFile, "wb"))
-    print('==> finish loading dataset')
-
-    nentity       = datasetInfo['nentity']
-    nrelation     = datasetInfo['nrelation']
-    # sample_ratio  = args.sample_ratio
-    # num_starts    = args.num_starts
-    savePath      = "./data"
-    ori_train_triples = datasetInfo['train_triples']
-    train_triples = []
-
-
-    #        if 'ogb' in args.dataset:
-    #            for idx in tqdm(range(len(ori_train_triples['head']))):
-    #                head, relation, tail = ori_train_triples['head'][idx], ori_train_triples['relation'][idx], ori_train_triples['tail'][idx]
-    #                if relation < nrelation:
-    #                    train_triples.append((head, relation, tail))
-    #        else:
-    for head, relation, tail in tqdm(ori_train_triples):
-        if relation < nrelation:
-            train_triples.append((head, relation, tail))
-
-    if args.repeat == 0:
-        KGGenerator(args.dataset, train_triples, args.sample_ratio, args.num_starts, savePath).sampled_dataset
-    else:
-        for repeat_num in range(1, args.repeat + 1):
-            KGGenerator(args.dataset, train_triples, args.sample_ratio, args.num_starts, savePath, repeat_num=repeat_num).sampled_dataset 
-

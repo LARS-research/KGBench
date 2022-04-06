@@ -61,6 +61,22 @@ class ComplExScorer(RelationalScorer):
 
         return ((s_all * p_all).unsqueeze(dim=2) * (o_all.transpose(1,2))).sum(dim=1)
 
+    def score_emb_po_given_negs(self, s_emb: torch.Tensor , p_emb: torch.Tensor, o_emb: torch.Tensor):
+        """ 
+            s_emb: batch_size * negs * dim
+            p_emb: batch_size * dim
+            o_emb: batch_size * dim
+         """
+        p_emb_re, p_emb_im = (t.contiguous() for t in p_emb.chunk(2, dim=1))
+        o_emb_re, o_emb_im = (t.contiguous() for t in o_emb.chunk(2, dim=1))
+
+        # combine them again to create a column block for each required combination
+        s_all = torch.cat((s_emb, s_emb), dim=2)  # re, im, re, im
+        p_all = torch.cat((p_emb_re, p_emb, -p_emb_im), dim=1)  # re, re, im, -im
+        o_all = torch.cat((o_emb, o_emb_im, o_emb_re), dim=1)  # re, im, im, re
+
+        return ((s_all.transpose(1,2)) * (o_all * p_all).unsqueeze(dim=2)).sum(dim=1)
+
 
 class ComplEx(KgeModel):
     r"""Implementation of the ComplEx KGE model."""
