@@ -1,7 +1,6 @@
 # READ ME
 新增了一种模型(model)AutoSF和相关的结构搜索方法(job)，新增了超参搜索方法TOSS。
 
-README文档和代码有些部分还在更新。
 
 ## Quick Start
 
@@ -32,7 +31,7 @@ kge start examples/toy-complex-train.yaml --job.device cuda:0
 
 Dataset保存在文件夹./data/下，如果要添加更多的数据集主要需要六个文件：
 
-dataset.yaml：数据集的相关信息，具体内容参考已有的数据集，最重要的信息有以下几个：
+dataset.yaml：数据集的相关信息，具体内容参考已有的数据集，最重要的信息例如有以下几个：
 
 ```yaml
 dataset:
@@ -101,9 +100,17 @@ sf_search的相关参数以及默认设置位于 /kge/config-default.yaml 之中
 
 ### 子图采样
 
-此处代码需要进一步整合，目前需要先进行consistency_analysing的运行，设置 job.type 为search，search.type为consistency_analysing，另外需要设置consistency_analysing的相关参数sampled_ratio，直到终端显示进入到了训练的过程，中断训练，此时 /data 中可以找到采样得到的子图，之后的搜索过程toss1中将dataset设为该子图的数据集。
+在参数的.yaml文件中设置job.type为搜索，search.type为subgraph_sample，在subgraph_sample.sampled_ratio中设置采样率，例如
 
-目前还无法对biokg和wikikg2进行子图采样。
+```yaml
+job.type: search
+dataset.name: biokg
+search.type: subgraph_sample
+
+subgraph_sample:
+  sampled_ratio: 0.2
+
+```
 
 
 
@@ -165,13 +172,14 @@ search任务注意把 valid.metric 设成mrr而不是mrr_filtered
 ```yaml
 dataset:
   files.test.type: triples_and_negs
-  files.test.neg_for_eval: 1000			# 负样本数目
+  files.test.neg_for_head: 500			# head负样本数目
+  files.test.neg_for_tail: 500			# tail负样本数目
   files.valid.type: triples_and_negs
-  files.test.neg_for_eval: 1000
-
+  files.test.neg_for_head: 500			# head负样本数目
+  files.test.neg_for_tail: 500			# tail负样本数目
 ```
 
-目前这两个数据集只支持autosf和ComplEX模型。
+目前这两个数据集的evaluate只支持autosf和ComplEX模型。
 
 
 

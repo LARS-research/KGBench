@@ -146,10 +146,16 @@ class KgeSampler(Configurable):
         rand = torch.rand((positive_triples.size(0), num_samples))
         bio_range = torch.tensor([10687, 10533, 45085, 17499, 9969])
         bio_bounds = torch.tensor([0, 10687, 21220, 66305, 83804])
-        bio_index = ((positive_triples[:,0]>bio_bounds[1]).long()
-            + (positive_triples[:,0]>bio_bounds[2])
-            + (positive_triples[:,0]>bio_bounds[3])
-            + (positive_triples[:,0]>bio_bounds[4])).view(-1,1)
+        if slot == S:
+            bio_index = ((positive_triples[:,0]>bio_bounds[1]).long()
+                + (positive_triples[:,0]>bio_bounds[2]).long()
+                + (positive_triples[:,0]>bio_bounds[3]).long()
+                + (positive_triples[:,0]>bio_bounds[4]).long()).view(-1,1)
+        else: 
+            bio_index = ((positive_triples[:,2]>bio_bounds[1]).long()
+                + (positive_triples[:,2]>bio_bounds[2]).long()
+                + (positive_triples[:,2]>bio_bounds[3]).long()
+                + (positive_triples[:,2]>bio_bounds[4]).long()).view(-1,1)
 
         return (rand * bio_range[bio_index]).long() + bio_bounds[bio_index]
 
