@@ -1,5 +1,7 @@
 /local/experiments
 /data
+!/data/biokg/biokg_proc.pyc
+!/data/wikikg2/wikikg2_proc.pyc
 /dataset
 /toss
 /examples

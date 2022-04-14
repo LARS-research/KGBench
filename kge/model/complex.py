@@ -59,7 +59,8 @@ class ComplExScorer(RelationalScorer):
         p_all = torch.cat((p_emb_re, p_emb, -p_emb_im), dim=1)  # re, re, im, -im
         o_all = torch.cat((o_emb, o_emb_im, o_emb_re), dim=2)  # re, im, im, re
 
-        return ((s_all * p_all).unsqueeze(dim=2) * (o_all.transpose(1,2))).sum(dim=1)
+        # return ((s_all * p_all).unsqueeze(dim=2) * (o_all.transpose(1,2))).sum(dim=1)
+        return torch.bmm(o_all, (s_all * p_all).unsqueeze(dim=2)).squeeze(-1)
 
     def score_emb_po_given_negs(self, s_emb: torch.Tensor , p_emb: torch.Tensor, o_emb: torch.Tensor):
         """ 
@@ -75,7 +76,8 @@ class ComplExScorer(RelationalScorer):
         p_all = torch.cat((p_emb_re, p_emb, -p_emb_im), dim=1)  # re, re, im, -im
         o_all = torch.cat((o_emb, o_emb_im, o_emb_re), dim=1)  # re, im, im, re
 
-        return ((s_all.transpose(1,2)) * (o_all * p_all).unsqueeze(dim=2)).sum(dim=1)
+        # return ((s_all.transpose(1,2)) * (o_all * p_all).unsqueeze(dim=2)).sum(dim=1)
+        return torch.bmm(s_all, (o_all * p_all).unsqueeze(dim=2)).squeeze(-1)
 
 
 class ComplEx(KgeModel):

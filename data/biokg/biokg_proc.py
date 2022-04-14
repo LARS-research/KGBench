@@ -11,12 +11,40 @@ split_edge = dataset.get_edge_split()
 print("split_edge = dataset.get_edge_split()")
 
 train_triples, valid_triples, test_triples = split_edge["train"], split_edge["valid"], split_edge["test"]
+
+cur_idx, cur_type_idx, type_dict, entity_dict = 0, 0, {}, {}
+for key in dataset[0]['num_nodes_dict']:
+    type_dict[key] = cur_type_idx
+    cur_type_idx += 1
+    entity_dict[key] = (cur_idx, cur_idx + dataset[0]['num_nodes_dict'][key])
+    cur_idx += dataset[0]['num_nodes_dict'][key]
+    print("key", key)
+print("cur_idx, cur_type_idx, type_dict, entity_dict", cur_idx, cur_type_idx, type_dict, entity_dict)
+
+def index_triples_across_type(triples, entity_dict, type_dict):
+    triples['head_type_idx'] = np.zeros_like(triples['head'])
+    triples['tail_type_idx'] = np.zeros_like(triples['tail'])
+    for i in range(len(triples['head'])):
+        h_type = triples['head_type'][i]
+        triples['head_type_idx'][i] = type_dict[h_type] 
+        triples['head'][i] += entity_dict[h_type][0]
+        if 'head_neg' in triples:
+            triples['head_neg'][i] += entity_dict[h_type][0]
+        t_type = triples['tail_type'][i]
+        triples['tail_type_idx'][i] = type_dict[t_type]
+        triples['tail'][i] += entity_dict[t_type][0]
+        if 'tail_neg' in triples:
+            triples['tail_neg'][i] += entity_dict[t_type][0]
+    return triples
+
+print('Indexing triples across different entity types ...')
+train_triples = index_triples_across_type(train_triples, entity_dict, type_dict)
+valid_triples = index_triples_across_type(valid_triples, entity_dict, type_dict)
+test_triples = index_triples_across_type(test_triples, entity_dict, type_dict)
 nrelation = int(max(train_triples['relation']))+1
+nentity = sum(dataset[0]['num_nodes_dict'].values())
+assert train_triples['head'].max() <= nentity
 
-print("type_triples", type(train_triples), type(valid_triples), type(test_triples))
-
-nentity = int(max(np.concatenate((train_triples['head'], 
-                                  train_triples['tail']))))+1
 print(nentity, nrelation)
 
 train_array = np.concatenate((train_triples['head'].reshape(-1, 1),

@@ -520,6 +520,9 @@ class EntityRankingJob(EvaluationJob):
 
             scores_pos = torch.empty(size=[0]).to(self.device)
             scores_neg = torch.empty(size=[0, neg_for_head + neg_for_tail]).to(self.device)
+
+            scores_neg_head = torch.empty(size=[0, neg_for_head]).to(self.device)
+            scores_neg_tail = torch.empty(size=[0, neg_for_tail]).to(self.device)
             
             for batch_number, batch_coords in enumerate(self.loader):
                 batch = batch_coords[0].to(self.device)
@@ -531,13 +534,15 @@ class EntityRankingJob(EvaluationJob):
                 batch_scores_pos = self.model.score_spo(s, p, o)
                 batch_scores_head_neg = self.model.score_po_given_negs(s_negs, p, o)
                 batch_scores_tail_neg = self.model.score_sp_given_negs(s, p, o_negs)
-                batch_scores_neg = torch.cat((batch_scores_head_neg, batch_scores_tail_neg), dim=1)
+                # batch_scores_neg = torch.cat((batch_scores_head_neg, batch_scores_tail_neg), dim=1)
                 scores_pos = torch.cat((scores_pos, batch_scores_pos), dim=0)
-                scores_neg = torch.cat((scores_neg, batch_scores_neg), dim=0)
+                # scores_neg = torch.cat((scores_neg, batch_scores_neg), dim=0)
+                scores_neg_head = torch.cat((scores_neg_head, batch_scores_head_neg), dim=0)
+                scores_neg_tail = torch.cat((scores_neg_tail, batch_scores_tail_neg), dim=0)
 
             if self.config.get("dataset.name") == 'biokg':
                 eval = Evaluator(name = 'ogbl-biokg')
-                result_dict = eval.eval({'y_pred_pos': scores_pos, 'y_pred_neg': scores_neg})
+                result_dict = eval.eval({'y_pred_pos': torch.cat((scores_pos,scores_pos),dim=0), 'y_pred_neg': torch.cat((scores_neg_head,scores_neg_tail),dim=0)})
                 metrics = {
                     'mean_reciprocal_rank' : (result_dict['mrr_list'].mean().item()),
                     'hits_at_1' : (result_dict['hits@1_list'].mean().item()),
@@ -564,7 +569,7 @@ class EntityRankingJob(EvaluationJob):
 
             elif self.config.get("dataset.name") == 'wikikg2':
                 eval = Evaluator(name = 'ogbl-wikikg2')
-                result_dict = eval.eval({'y_pred_pos': scores_pos, 'y_pred_neg': scores_neg})
+                result_dict = eval.eval({'y_pred_pos': torch.cat((scores_pos,scores_pos),dim=0), 'y_pred_neg': torch.cat((scores_neg_head,scores_neg_tail),dim=0)})
                 metrics = {
                     'mean_reciprocal_rank' : (result_dict['mrr_list'].mean().item()),
                     'hits_at_1' : (result_dict['hits@1_list'].mean().item()),
