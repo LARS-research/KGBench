@@ -15,7 +15,6 @@ from kge.util.io import get_checkpoint_file, load_checkpoint
 from kge.util.package import package_model, add_package_parser
 from kge.util.seed import seed_from_config
 
-import setproctitle
 
 def argparse_bool_type(v):
     "Type for argparse that correctly treats Boolean values"
@@ -140,7 +139,6 @@ def create_parser(config, additional_args=[]):
 
 
 def main():
-    setproctitle.setproctitle("AutoKGE@loali")
 
     # default config
     config = Config()

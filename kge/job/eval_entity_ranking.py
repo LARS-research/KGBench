@@ -519,7 +519,7 @@ class EntityRankingJob(EvaluationJob):
             neg_for_tail = self.config.get("dataset.files."+ self.eval_split +".neg_for_tail")
 
             scores_pos = torch.empty(size=[0]).to(self.device)
-            scores_neg = torch.empty(size=[0, neg_for_head + neg_for_tail]).to(self.device)
+            # scores_neg = torch.empty(size=[0, neg_for_head + neg_for_tail]).to(self.device)
 
             scores_neg_head = torch.empty(size=[0, neg_for_head]).to(self.device)
             scores_neg_tail = torch.empty(size=[0, neg_for_tail]).to(self.device)

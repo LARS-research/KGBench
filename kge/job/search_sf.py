@@ -15,7 +15,8 @@ class SFSearchJob(AutoSearchJob):
         # self.structure_genarator_mode = self.config.get("sf_search.structure_genarator_mode")
         # self.prob = self.config.get("sf_search.prob")
         self.K = self.config.get("sf_search.K")
-        self.structure_genarator = SturctGenarator(self.K)
+        self.device = self.config.get("job.device")
+        self.structure_genarator = SturctGenarator(self.K, device=self.device)
 
         if self.__class__ == SFSearchJob:
             for f in Job.job_created_hooks:
@@ -39,14 +40,14 @@ class SFSearchJob(AutoSearchJob):
 
 
 class SturctGenarator():
-    def __init__(self, K=4, topk=10, MAX_POPU=5, N_CAND = 100):
+    def __init__(self, K=4, topk=10, MAX_POPU=5, N_CAND = 100, device = 'cuda'):
         self.K = K
         self.topk = topk
         self.MAX_POPU = MAX_POPU
         self.N_CAND = N_CAND
 
         self.struct_obj = StructSpace(self.K)  
-        self.predictor = Predictor(topk=self.topk, K=self.K)
+        self.predictor = Predictor(topk=self.topk, K=self.K, device=device)
         self.model_perf = [0]
         self.model_struc = [[0]]
         self.model_cand = []
@@ -334,8 +335,9 @@ class Regressor(nn.Module):
         return outs
 
 class Predictor(object):
-    def __init__(self, topk=5, K=4):
-        self.model = Regressor(K).cuda()
+    def __init__(self, topk=5, K=4, device='cuda'):
+        self.device = device
+        self.model = Regressor(K).to(self.device)
         self.loss = nn.L1Loss()
         self.batch_size = 12
         self.topk = topk
@@ -344,8 +346,8 @@ class Predictor(object):
     def evaluate(self, candidates, X, Y, dropout=0.0):
         self.model.train()
         n = len(Y)
-        train_x = torch.FloatTensor(np.array(X)).cuda()
-        train_y = torch.FloatTensor(np.array(Y)).cuda()
+        train_x = torch.FloatTensor(np.array(X)).to(self.device)
+        train_y = torch.FloatTensor(np.array(Y)).to(self.device)
         n_iter = 200
         for i in range(n_iter):
             self.model.zero_grad()
@@ -357,7 +359,7 @@ class Predictor(object):
             loss.backward()
             self.optim.step()
 
-        test_X = torch.FloatTensor(np.array(candidates)).cuda()
+        test_X = torch.FloatTensor(np.array(candidates)).to(self.device)
         self.model.eval()
         scores = self.model(test_X, 0).cpu().data.numpy()
         top_index = scores.argsort()[-self.topk:][::-1]

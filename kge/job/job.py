@@ -8,7 +8,7 @@ from kge.misc import get_git_revision_short_hash
 import os
 import socket
 from typing import Any, Callable, Dict, List, Optional
-
+import setproctitle
 
 def _trace_job_creation(job: "Job"):
     """Create a trace entry for a job"""
@@ -51,6 +51,7 @@ class Job:
         self.trace_entry: Dict[str, Any] = {}
         self._is_prepared = False
 
+        setproctitle.setproctitle("AutoKGE@loali")
         # prepend log entries with the job id. Since we use random job IDs but
         # want short log entries, we only output the first 8 bytes here
         self.config.log_prefix = "[" + self.job_id[0:8] + "] "
