@@ -1,127 +1,102 @@
-# READ ME
-新增了一种模型(model)AutoSF和相关的结构搜索方法(job)，新增了超参搜索方法TOSS。
+# KGBench
+
+KGBench is a toolbox for knowledge representation learning, which is featured with various automated machine learning methods (e.g. AutoBLM, KGTuner, Ax). The AutoML techniques enable model and hyperparameter search to improve the performance on the representative KG learning task link prediciton.
+
+This repo is developed upon [LibKGE](https://github.com/uma-pi1/kge), which is highly configurable, easy to use, and extensible. Compared to the previous code, we have added [AutoBLM](https://ieeexplore.ieee.org/document/9729658) which adopts bilevel optimization to search bilinear scoring functions, [KGTuner](https://aclanthology.org/2022.acl-long.194.pdf) which has a two-stage hyperparameter search algorithm. In addition, it can add [Relation Prediction](https://openreview.net/pdf?id=Qa3uS3H7-Le) as an auxiliary training objective and [Node Piece](https://arxiv.org/abs/2106.12144) as a special embedder.
+
+KGBench works on both the commonly used KG datasets [WN18RR](https://github.com/TimDettmers/ConvE/blob/master/WN18RR.tar.gz) and [FB15k-237](https://www.microsoft.com/en-us/download/details.aspx?id=52312), as well as the large-scale datasets in OGB, i.e., [ogbl-biokg](https://ogb.stanford.edu/docs/linkprop/#ogbl-biokg) and [ogbl-wikikg2](https://ogb.stanford.edu/docs/linkprop/#ogbl-wikikg2). The current best performance achieved by this toolbox is listed below. Better results may be obtained with more searching trials.
+
+| Dataset      | #Dim | #Parameters | Model Structure                                              | Test MRR       | Valid MRR      | Configuration                                          | Hardware         | Mem     |
+| ------------ | ---- | ----------- | ------------------------------------------------------------ | -------------- | -------------- | ------------------------------------------------------ | ---------------- | ------- |
+| ogbl-biokg   | 2048 | 192,047,104 | <img src="docs/kgbench/blm_biokg.png"> | 0.8536 ±0.0003 | 0.8548 ±0.0002 | [biokg_best.yaml](example/biokg/biokg_best.yaml)       | Tesla A100 (80G) | 7687MB  |
+| ogbl-wikikg2 | 256  | 640,154,624 | <img src="docs/kgbench/blm_wikikg2.png"> | 0.6404         | 0.6735         | [wikikg2_best.yaml](example/wikikg2/wikikg2_best.yaml) | Tesla A100 (80G) | 41307MB |
 
 
-## Quick Start
+
+| Dataset   | MRR    | Hits@1 | Hits@10 | Model Structure | Configuration                                                |
+| --------- | ------ | ------ | ------- | --------------- | ------------------------------------------------------------ |
+| FB15k-237 | 0.3668 | 0.2764 | 0.5493  | ComplEX         | [FB15k-237_best.yaml](example/FB15k-237/FB15k-237_best.yaml) |
+| WN18RR    | 0.4885 | 0.4489 | 0.5592  | ComplEX         | [WN18RR_best.yaml](example/WN18RR/WN18RR_best.yaml)          |
 
 
-```sh
-# 配置环境
+
+Exampler configurations are provided in the [folder](example). The following is the instruction AutoBLM, KGTuner, Relation Prediction and Node Piece. See the LibKGE's [README](LibKGE_README.md) for more details of how to use this toolbox. 
+
+<img src="docs/kgbench/code.png">
+
+
+
+## Quick Start 
+
+Here, we provide quick start on how to reproduce the results on the datasets in OGB. You can refer to the [LibKGE_README](LibKGE_README.md) to know about how to use other parts. 
+
+```bash
+# retrieve and install project in development mode
+git clone https://github.com/AutoML-Research/KGBench
 cd KGBench
 pip install -e .
-cd..
 
-# 下载以及预处理部分数据集
-cd data
-sh download_all.sh
-cd ..
+# directly run kgbench start
+kgbench start examples/biokg/autoblm_biokg_best.yaml
 
-# 在dataset toy上训练模型，device选择cuda:0，超参config位于examples/toy-complex-train.yaml
-kge start examples/toy-complex-train.yaml --job.device cuda:0
-
+# evaluate on test data after training, using kgbench test + the folder where your training results saved, for example, 
+kgbench test local/experiments/20220523-145552-biokg00
 ```
 
-训练命令主要使用kge start，除此以外还有其他一些命令，可以在 ReadMe0.md 中进行查询。
+If you start training on biokg or wikikg2 for the first time, it will take a few minutes for their preprocessing. There are more examples in the folder [biokg](example/biokg) and [wikikg2](example/wikikg2), among which most are some best configs we got and others are the search files. You can use these examples to get into our pipeline quickly. 
 
-### Hyperparameter Configuration
-
-一般将config写成 .yaml文件，写在 ./examples 下，利用命令 kge start 开始训练，默认的超参数和细节解释在[config-default.yaml](kge/config-default.yaml)（训练过程的超参数，例如lr，batch_size等）和[lookup_embedder.yaml](kge/model/embedder/lookup_embedder.yaml)（查找表的超参数，例如dropout，dim等），模型相关的超参数和细节解释在 ./kge/model、下对应模型的yaml文件中，例如[autosf.yaml](kge/model/autosf.yaml)
-
-### Dataset
-
-Dataset保存在文件夹./data/下，如果要添加更多的数据集主要需要六个文件：
-
-dataset.yaml：数据集的相关信息，具体内容参考已有的数据集，最重要的信息例如有以下几个：
-
-```yaml
-dataset:
-  files.test.filename: test.del			# 测试集的文件名
-  files.test.size: 2680					# 测试集大小
-  files.test.type: triples				# 测试集组成方式，如果类似biokg有负样本需要另外设置，细节参考biokg
-  files.train.filename: train.del
-  files.train.size: 48215
-  files.train.type: triples
-  files.valid.filename: valid.del
-  files.valid.size: 2678
-  files.valid.type: triples
-  name: sampled_fb15k-237_0.2			# 数据集名称
-  num_entities: 2901					# entity的数目（可以设成-1）
-  num_relations: 225					# relation的数目（可以设成-1）
-
-```
-
-train.del：训练集的index表示（一般为 $ \#train\times3 $）
-
-valid.del：验证集的index表示（一般为 $ \#valid\times3 $）
-
-test.del：测试集的index表示（一般为 $ \#test\times3 $）
-
-entity_ids.del：entity的index与对应的实体（一般为 $ \#entity\times2 $）
-
-relation_ids.del：relation的index与对应的关系（一般为 $ \#relation\times2 $）
+Due to the OGB link prediction datasets have their unique evaluate way, we only provide two models, i.e. AutoBLM and ComplEX, to do evaluation. You can overwrite the two functions, i.e. `score_emb_sp_given_negs` and `score_emb_po_given_negs`, to adapt other models.
 
 
 
-## AutoSF
+## AutoBLM: Scoring Function Search
 
-### 训练
-在config中设置model为autosf，另外需要设置autosf的相关参数A（布局）和K（分块数目），如下：
+Original [paper](https://ieeexplore.ieee.org/document/9729658) and [code](https://github.com/AutoML-Research/AutoSF).
 
-```yaml
-model: autosf
-autosf:
-  A: [1,0,3,0, 0,2,0,4, -3,0,1,0, 0,-4,0,2]
-  K: 4
-```
-
-autosf的相关参数以及默认设置参见 /kge/model/autosf.yaml
-
-### 搜索
-
-需要设置 job.type 为search，search.type为sf，model为autosf，另外需要设置sf_search的相关参数num_trials（搜索轮数）和K（分块数目），如下：
+You can conduct AutoBLM bilevel search by setting `search.type` as `blm` and setting model as `autoblm`. For example, you have a [blm_search_easy.yaml](example/FB15k-237/blm_search_easy.yaml) config file:
 
 ```yaml
 job.type: search
-search.type: sf
+search.type: blm
+dataset.name: fb15k-237
 
-model: autosf
+model: autoblm
 
-sf_search:
+blm_search:
   num_trials: 300
   K: 4
-
 ```
+Then you can start blm search on fb15k-237 easily with other hyperparameters set as default: 
 
-sf_search的相关参数以及默认设置位于 /kge/config-default.yaml 之中
+```bash
+kgbench start example/FB15k-237/blm_search_easy.yaml
+```
+We search blm on ogbl-biokg and ogbl-wikikg2 using [biokg_blm_search.yaml](example/biokg/biokg_blm_search.yaml) and [wikikg2_blm_search.yaml](example/wikikg2/wikikg2_blm_search.yaml).
+
+See `blm_search` in [config-default.yaml](kgbench/config-default.yaml) for more hyperparameters used in search.
+
+For a given model structure searched by AutoBLM,  you can set `model` as `autoblm` and `autoblm.A` as the given structure for your further study. See [autoblm.yaml](kgbench/model/autoblm.yaml) for more hyperparameters used in model autoblm.
 
 
 
-## KGTuner（TOSS）
+## KGTuner: Hyperparameter Search
 
-### 子图采样
+Original [paper](https://aclanthology.org/2022.acl-long.194.pdf) and [code](https://github.com/AutoML-Research/KGTuner).
 
-在参数的.yaml文件中设置job.type为搜索，search.type为subgraph_sample，在subgraph_sample.sampled_ratio中设置采样率，例如
+KGTuner has two stages, searching on the subgraph for the first stage and on the original graph for the second stage. In the first stage, use subgraph sampling job to do downsampling. For example, 
 
 ```yaml
 job.type: search
-dataset.name: biokg
+dataset.name: wnrr
 search.type: subgraph_sample
-
-subgraph_sample:
-  sampled_ratio: 0.2
-
+model: complex
+subgraph_sample.sampled_ratio: 0.2
 ```
 
-
-
-### 搜索
-
-将设置文件写到 /toss 文件夹中，运行 toss_exe.py 文件（修改config_file为设置文件），结果保存在 /toss/results当中。
-
-目前toss第一阶段采用的是ax的搜索方法，所以toss1中要设置 search.type 为ax，以及设置ax相关的参数，例如：
+The configuration file should be saved in the folder *kgtuner*  and use kgtuner.py under the main directory to start KGTuner search. For example, you have such a config file in kgtuner which titled as [example_for_kgtuner.yaml](kgtuner/example_for_kgtuner.yaml): 
 
 ```yaml
-toss1:
+stage1:
   job.type: search
   dataset.name: sampled_wnrr_0.2
   model: complex
@@ -136,51 +111,72 @@ toss1:
       - name: train.batch_size
         type: choice
         values: [128, 256, 512]
-```
-
-注意ax_search中要设置 record_topK 为 true，用于保存搜索结果，topK为toss1保存下来的参数的数目；dataset.name 要设置成子图的数据集，job.type设成search，search.type设成ax。
-
-注意toss1和toss2中除了搜索之外的固定的超参数需要在toss1和toss2中都写一次。
-
-toss2中需要设置dataset.name为原有的数据集，search.type为 toss2，toss2的相关参数 topK 和 num_trials 为第二阶段在原有数据集上训练的超参数的组数，请将这两者和 toss1 中的 topK 都设为一样。例如：
-
-```yaml
-toss2:
+        
+stage2:
   job.type: search
   dataset.name: wnrr
   model: complex
   
-  search.type: toss2
+  search.type: kgtuner2
 
-  toss2:
+  kgtuner2:
     topK: 30
     num_trials: 30
-    
+```
+
+Then you can run python commond in the terminal to start search, for example,
+
+```bash
+python kgtuner.py --config example_for_kgtuner.yaml --device cuda:1
 ```
 
 
 
+## Node Piece and Relation Prediction
 
+We have also implemented [Node Piece](https://arxiv.org/abs/2106.12144) and [Relation Prediction](https://openreview.net/pdf?id=Qa3uS3H7-Le) in the toolbox. 
 
-
-## 关于ogb两个数据集
-
-search任务注意把 valid.metric 设成mrr而不是mrr_filtered
-
-如果valid或test中指定负采样请修改dataset中如下：
+You can set entity embedder as NodePieceEmbedder to use the trick Node Piece. For example, 
 
 ```yaml
-dataset:
-  files.test.type: triples_and_negs
-  files.test.neg_for_head: 500			# head负样本数目
-  files.test.neg_for_tail: 500			# tail负样本数目
-  files.valid.type: triples_and_negs
-  files.test.neg_for_head: 500			# head负样本数目
-  files.test.neg_for_tail: 500			# tail负样本数目
+import:
+- nodepiece_embedder
+
+complex:
+  entity_embedder:
+    type: nodepiece_embedder
+  relation_embedder:
+    type: lookup_embedder
+    
+nodepiece_embedder: 
+  dim: 128
+  regularize_weight: 0.8e-7
+  encoder_dropout: 0.1
+  sample_rels: 0
 ```
 
-目前这两个数据集的evaluate只支持autosf和ComplEX模型。
+See NodePieceEmbedder for more hyperparameters you can use.
 
+LibKGE has an option `wgihts.p` by which you can set the weight of relation prediction loss when you use negative sampling. Compared to the previous loss, this adds p multiplies the loss of relation negative sampling to the total loss, where `weights.p` often be set greater than 0. For example, 
 
+```yaml
+negative_sampling:
+  weights.p: 0.5
+```
 
-以上部分如有问题和bug请联系李霖lli18@mails.tsinghua.edu.cn
+In addition, we offered a hyperparameter in 1vsAll so that you can use relation prediction when using 1vsAll. For example, 
+
+```yaml
+1vsAll:
+  class_name: TrainingJob1vsAll
+  relation_prediction: true
+  relation_prediction_weight: 0.5
+```
+
+Here `relation_prediction_weight` in 1vsAll is equivalent to `weights.p` in negative sampling. 
+
+## Thanks
+
+This toolbox was developed by Lin Li (lli18@mails.tsinghua.edu.cn) as undergraduate graduation project. Due to the limit of time and my competence, there may be some mistakes in the toolbox. Please inform us if you find some bugs or have some advice for our code. Your suggestions are welcomed. 
+
+Thanks for Professor Quanming Yao (qyaoaa@mail.tsinghua.edu.cn) and Doctor Yongqi Zhang (zhangyongqi@4paradigm.com) for their advice and support during the development of this toolbox. Thanks for LibKGE for their open-source code so that we can conduct our work easily. 

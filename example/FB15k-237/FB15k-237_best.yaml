@@ -1,0 +1,60 @@
+job.type: train
+dataset.name: fb15k-237
+model: reciprocal_relations_model
+
+1vsAll:
+  relation_prediction: true
+  relation_prediction_weight: 0.8272480164786761
+
+complex:
+  entity_embedder:
+    dropout: 0.5024238994908072
+    regularize_weight: 4.1587126671969165e-06
+  relation_embedder:
+    dropout: 0.5061077855159372
+    regularize_weight: 0.0001
+
+import:
+- reciprocal_relations_model
+- complex
+
+lookup_embedder:
+  dim: 1024
+  dropout: 0.0
+  initialize: uniform_
+  initialize_args:
+    uniform_:
+      a: -0.8328168489829233
+
+reciprocal_relations_model:
+  base_model:
+    type: complex
+
+train:
+  batch_size: 512
+  lr_scheduler_args:
+    factor: 0.95
+    mode: max
+    patience: 7
+    threshold: 0.0001
+  max_epochs: 400
+  optimizer:
+    default:
+      args:
+        lr: 0.39311839834374207
+      type: Adagrad
+  trace_level: epoch
+  type: 1vsAll
+
+valid:
+  early_stopping:
+    patience: 10
+    threshold:
+      epochs: 50
+      metric_value: 0.05
+  every: 5
+  metric: mean_reciprocal_rank_filtered_with_test
+  metric_expr: float("nan")
+  metric_max: true
+  split: valid
+  trace_level: epoch

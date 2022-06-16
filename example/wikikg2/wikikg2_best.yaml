@@ -1,0 +1,44 @@
+job.type: train
+dataset.name: wikikg2
+model: autoblm
+
+import:
+- autoblm
+
+autoblm:
+  A:
+  - 1
+  - 0
+  - 0
+  - 0
+  - 0
+  - 2
+  - 0
+  - -2
+  - 0
+  - 0
+  - 1
+  - 4
+  - 0
+  - 3
+  - 3
+  - 0
+
+lookup_embedder:
+  dim: 256
+  dropout: 0.1
+  regularize_weight: 4.56797381733809e-07
+
+train:
+  batch_size: 512
+  max_epochs: 50
+  optimizer:
+    default:
+      args:
+        lr: 0.3769091570436217
+      type: Adagrad
+  trace_level: epoch
+  type: 1vsAll
+
+valid:
+  metric: mean_reciprocal_rank

@@ -1,0 +1,50 @@
+job.type: train
+dataset.name: biokg
+model: autoblm
+
+import:
+- autoblm
+
+autoblm:
+  A:
+  - 1
+  - 0
+  - 0
+  - 0
+  - 0
+  - 2
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 3
+  - 0
+  - 0
+  - 4
+  - 0
+
+1vsAll:
+  relation_prediction: true
+  relation_prediction_weight: 0.3865474797785282
+
+lookup_embedder:
+  dim: 2048
+  dropout: 0.15
+  regularize_weight: 2.3547438951949114e-06
+
+
+train:
+  batch_size: 512
+  max_epochs: 100
+  optimizer:
+    default:
+      args:
+        lr: 0.05329232811099055
+      type: Adagrad
+  trace_level: epoch
+  type: 1vsAll
+
+valid:
+  metric: mean_reciprocal_rank
+

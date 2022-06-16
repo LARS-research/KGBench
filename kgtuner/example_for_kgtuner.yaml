@@ -1,0 +1,26 @@
+stage1:
+  job.type: search
+  dataset.name: sampled_wnrr_0.2
+  model: complex
+  
+  search.type: ax
+  ax_search:
+    topK: 30    # num of the saved best hyperparameter configs got from subgraph
+    record_topK: true
+    num_trials: 200   # num of the search trials on subgraph
+    num_sobol_trials: 70
+    parameters:
+      - name: train.batch_size
+        type: choice
+        values: [128, 256, 512]
+        
+stage2:
+  job.type: search
+  dataset.name: wnrr
+  model: complex
+  
+  search.type: kgtuner2
+
+  kgtuner2:
+    topK: 30      # num of the saved best hyperparameter configs got from subgraph
+    num_trials: 30      # num of the search trials on original graph, should be equal to topK

@@ -1,0 +1,58 @@
+job.type: train
+dataset.name: wnrr
+model: complex
+
+1vsAll:
+  relation_prediction: true
+  rp_lambda: 0.08730111582385243
+
+complex:
+  entity_embedder:
+    dropout: 0.6
+    regularize_weight: 0.0001
+  relation_embedder:
+    dropout: 0.23559792446310426
+    regularize_weight: 0.0001
+
+import:
+- complex
+
+lookup_embedder:
+  dim: 256
+  dropout: 0.0
+  initialize: uniform_
+  initialize_args:
+    uniform_:
+      a: -0.28148249060722197
+
+
+
+train:
+  batch_size: 1024
+  lr_scheduler_args:
+    factor: 0.95
+    mode: max
+    patience: 5
+    threshold: 0.0001
+  lr_warmup: 0
+  max_epochs: 400
+  optimizer:
+    default:
+      args:
+        lr: 0.47262502000323753
+      type: Adagrad
+  trace_level: epoch
+  type: 1vsAll
+
+valid:
+  early_stopping:
+    patience: 10
+    threshold:
+      epochs: 50
+      metric_value: 0.05
+  every: 5
+  metric: mean_reciprocal_rank_filtered_with_test
+  metric_expr: float("nan")
+  metric_max: true
+  split: valid
+  trace_level: epoch

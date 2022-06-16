@@ -1,0 +1,42 @@
+# This is the hyperparameter search config file of biokg.
+# We choose the blm structure from the previous search(biokg_blm_search.yaml). 
+
+job.type: search
+dataset.name: biokg
+model: autoblm
+search.type: ax
+valid.metric: mean_reciprocal_rank
+
+autoblm:
+  A: [1,0,0,0, 0,2,0,0, 0,0,0,3, 0,0,4,0]
+
+ax_search:
+  num_sobol_trials: 40
+  num_trials: 150  
+  parameters: 
+    - name: 1vsAll.rp_lambda
+      type: range
+      bounds: [0.0, 1.0]
+    - name: lookup_embedder.regularize_weight
+      type: range
+      bounds: [1.0e-8, 1.0e-5]
+      log_scale: true
+    - name: train.optimizer.default.args.lr
+      type: range
+      bounds: [0.02, 0.5]
+      log_scale: true
+
+1vsAll:
+  relation_prediction: true
+
+lookup_embedder:
+  dim: 1024
+  dropout: 0.15
+  
+train:
+  batch_size: 512
+  optimizer.default:
+    type: Adagrad
+  type: 1vsAll
+  max_epochs: 5   # We use little max epoch to make full use of time budget, which may influence results a little.
+

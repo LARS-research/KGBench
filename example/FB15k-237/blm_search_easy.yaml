@@ -1,0 +1,9 @@
+job.type: search
+search.type: blm
+dataset.name: fb15k-237
+
+model: autoblm
+
+blm_search:
+  num_trials: 300
+  K: 4

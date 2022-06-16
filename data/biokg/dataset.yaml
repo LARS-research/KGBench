@@ -3,7 +3,8 @@ dataset:
   files.test.size: 162870
   files.test.split_type: test
   files.test.type: triples_and_negs
-  files.test.neg_for_eval: 1000
+  files.test.neg_for_head: 500
+  files.test.neg_for_tail: 500
   files.train.filename: train.del
   files.train.size: 4762678
   files.train.split_type: train
@@ -12,7 +13,8 @@ dataset:
   files.valid.size: 162886
   files.valid.split_type: valid
   files.valid.type: triples_and_negs
-  files.valid.neg_for_eval: 1000
+  files.valid.neg_for_head: 500
+  files.valid.neg_for_tail: 500
   name: biokg
   num_entities: 93773
   num_relations: 51

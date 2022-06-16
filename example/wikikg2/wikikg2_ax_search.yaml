@@ -1,0 +1,41 @@
+# This is the hyperparameter search config file of wikikg2.
+# We choose the blm structure from the previous study(https://github.com/AutoML-Research/AutoSF). 
+
+job.type: search
+dataset.name: wikikg2
+model: autoblm
+search.type: ax
+valid.metric: mean_reciprocal_rank
+
+ax_search:
+  num_sobol_trials: 20
+  num_trials: 100  
+  parameters: 
+    - name: 1vsAll.relation_prediction_weight
+      type: range
+      bounds: [0.0, 0.3]
+    - name: lookup_embedder.regularize_weight
+      type: range
+      bounds: [1.0e-7, 3.0e-6]
+      log_scale: true
+    - name: train.optimizer.default.args.lr
+      type: range
+      bounds: [0.15, 0.6]
+      log_scale: true
+
+1vsAll:
+  relation_prediction: true
+
+autoblm:
+  A: [0, 1, 0, 0, 2, 0, 0, 0, 0, 0, -3, 4, 1, 0, 4, 0]
+lookup_embedder:
+  dim: 128
+  dropout: 0.1
+
+train:
+  batch_size: 512
+  optimizer.default:
+    type: Adagrad
+  type: 1vsAll
+  max_epochs: 5   # We use little max epoch to make full use of time budget, which may influence results a little.
+

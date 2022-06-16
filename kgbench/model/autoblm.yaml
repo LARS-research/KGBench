@@ -1,0 +1,14 @@
+import: [lookup_embedder]
+
+autoblm:
+  class_name: AutoBLM
+  entity_embedder:
+    type: lookup_embedder
+    +++: +++
+  relation_embedder:
+    type: lookup_embedder
+    +++: +++
+  A: [1,0,0,0, 0,2,0,0, 0,0,3,0, 0,0,0,4]     # unified BLM structure matrix
+  K: 4      # num of matrix blocks is K*K
+
+

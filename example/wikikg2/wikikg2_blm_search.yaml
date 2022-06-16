@@ -1,0 +1,30 @@
+# This is the BLM search config file of wikikg2.
+# Other hyperparameter setting was got by search using ComplEX model.
+# The choosen BLM structure may not be the best during the search because performance will 
+# depend on both structure and hyperparameter setting. We choose a good structure but not the
+# best structure during the blm search then use it to conduct hyperparameter search to get a 
+# good performance. 
+
+job.type: search
+dataset.name: wikikg2
+model: autoblm
+search.type: blm
+valid.metric: mean_reciprocal_rank
+
+blm_search:
+  num_trials: 300
+  K: 4
+
+lookup_embedder:
+  dim: 256
+  dropout: 0.1
+
+train:
+  batch_size: 512
+  optimizer:
+    default:
+      args:
+        lr: 0.3769091570436217
+      type: Adagrad
+  type: 1vsAll
+  max_epochs: 5     # We use little max epoch to make full use of time budget, which may influence results a little.
