@@ -8,8 +8,8 @@ KGBench works on both the commonly used KG datasets [WN18RR](https://github.com/
 
 | Dataset      | #Dim | #Parameters | Model Structure                                              | Test MRR       | Valid MRR      | Configuration                                          | Hardware         | Mem     |
 | ------------ | ---- | ----------- | ------------------------------------------------------------ | -------------- | -------------- | ------------------------------------------------------ | ---------------- | ------- |
-| ogbl-biokg   | 2048 | 192,047,104 | <img src="docs/kgbench/blm_biokg.png"> | 0.8536 ±0.0003 | 0.8548 ±0.0002 | [biokg_best.yaml](example/biokg/biokg_best.yaml)       | Tesla A100 (80G) | 7687MB  |
-| ogbl-wikikg2 | 256  | 640,154,624 | <img src="docs/kgbench/blm_wikikg2.png"> | 0.6404         | 0.6735         | [wikikg2_best.yaml](example/wikikg2/wikikg2_best.yaml) | Tesla A100 (80G) | 41307MB |
+| ogbl-biokg   | 2048 | 192,047,104 | ![](./docs/kgbench/blm_biokg.png) | 0.8536 ±0.0003 | 0.8548 ±0.0002 | [biokg_best.yaml](example/biokg/biokg_best.yaml)       | Tesla A100 (80G) | 7687MB  |
+| ogbl-wikikg2 | 256  | 640,154,624 | ![](./docs/kgbench/blm_wikikg2.png) | 0.6404         | 0.6735         | [wikikg2_best.yaml](example/wikikg2/wikikg2_best.yaml) | Tesla A100 (80G) | 41307MB |
 
 
 
@@ -22,7 +22,7 @@ KGBench works on both the commonly used KG datasets [WN18RR](https://github.com/
 
 Exampler configurations are provided in the [folder](example). The following is the instruction AutoBLM, KGTuner, Relation Prediction and Node Piece. See the LibKGE's [README](LibKGE_README.md) for more details of how to use this toolbox. 
 
-<img src="docs/kgbench/code.png">
+![](./docs/kgbench/code.png)
 
 
 
