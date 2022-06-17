@@ -20,7 +20,7 @@ KGBench works on both the commonly used KG datasets [WN18RR](https://github.com/
 
 
 
-Exampler configurations are provided in the [example](example) folder. The following is the instruction for AutoBLM and KGTuner as well as the usage of auxiliary techniques Relation Prediction and Node Piece. See the LibKGE's [README](https://github.com/uma-pi1/kge/blob/master/README.md) for more details of how to use this toolbox and the [Instruction](kgbench/job/Instruction.md) for how to use AutoBLM, KGTuner, Relation Prediction and Node Piece. 
+Exampler configurations are provided in the [example](example) folder. The following is the instruction for AutoBLM and KGTuner as well as the usage of auxiliary techniques Relation Prediction and Node Piece. See the LibKGE's [README](https://github.com/uma-pi1/kge/blob/master/README.md) for more details of how to use this toolbox and the [README](example/README.md) in example for how to use AutoBLM, KGTuner, Relation Prediction and Node Piece. 
 
 <img src="./docs/kgbench/code.png" alt="code.png" style="zoom:50%;" />
 
