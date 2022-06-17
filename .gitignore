@@ -1,9 +1,10 @@
-/local/experiments
+/local
 /data
 !/data/biokg/biokg_proc.pyc
 !/data/wikikg2/wikikg2_proc.pyc
 /dataset
-/toss
+/kgtuner
 /example
 *.pyc
 *__pycache__/
+/.vscode
