@@ -1,6 +1,6 @@
 # KGBench
 
-KGBench is a toolbox for knowledge representation learning, which is featured with various automated machine learning methods (e.g. AutoBLM, KGTuner, Ax). The AutoML techniques enable model and hyperparameter search to improve the performance on the representative KG learning task link prediciton.
+KGBench is a toolbox for knowledge representation learning, which is featured with various automated machine learning methods (e.g. `AutoBLM` in TPAMI-2022, `KGTuner` in ACL-2022 and the HPO toolbox `Ax`). The AutoML techniques enable model and hyperparameter search to improve the performance on the representative KG learning task link prediciton.
 
 This repo is developed upon [LibKGE](https://github.com/uma-pi1/kge), which is highly configurable, easy to use, and extensible. Compared to the previous code, we have added [AutoBLM](https://ieeexplore.ieee.org/document/9729658) which adopts bilevel optimization to search bilinear scoring functions, [KGTuner](https://aclanthology.org/2022.acl-long.194.pdf) which has a two-stage hyperparameter search algorithm. In addition, it can add [Relation Prediction](https://openreview.net/pdf?id=Qa3uS3H7-Le) as an auxiliary training objective and [Node Piece](https://arxiv.org/abs/2106.12144) as a special embedder.
 
@@ -20,7 +20,7 @@ KGBench works on both the commonly used KG datasets [WN18RR](https://github.com/
 
 
 
-Exampler configurations are provided in the [folder](example). The following is the instruction AutoBLM, KGTuner, Relation Prediction and Node Piece. See the LibKGE's [README](LibKGE_README.md) for more details of how to use this toolbox. 
+Exampler configurations are provided in the [example](example) folder. The following is the instruction for AutoBLM and KGTuner as well as the usage of auxiliary techniques Relation Prediction and Node Piece. See the LibKGE's [README](https://github.com/uma-pi1/kge/blob/master/README.md) for more details of how to use this toolbox. 
 
 ![](./docs/kgbench/code.png)
 
@@ -28,7 +28,7 @@ Exampler configurations are provided in the [folder](example). The following is 
 
 ## Quick Start 
 
-Here, we provide quick start on how to reproduce the results on the datasets in OGB. You can refer to the [LibKGE_README](LibKGE_README.md) to know about how to use other parts. 
+Here, we provide quick start on how to reproduce the results on the datasets in OGB.
 
 ```bash
 # retrieve and install project in development mode
@@ -43,9 +43,9 @@ kgbench start examples/biokg/autoblm_biokg_best.yaml
 kgbench test local/experiments/20220523-145552-biokg00
 ```
 
-If you start training on biokg or wikikg2 for the first time, it will take a few minutes for their preprocessing. There are more examples in the folder [biokg](example/biokg) and [wikikg2](example/wikikg2), among which most are some best configs we got and others are the search files. You can use these examples to get into our pipeline quickly. 
+If you start training on biokg or wikikg2 for the first time, it will take a few minutes for their preprocessing. There are more examples in the folder [biokg](example/biokg) and [wikikg2](example/wikikg2), where we provide the configuration to the search or reproduce the best results. You can use these examples to get into our pipeline quickly. 
 
-Due to the OGB link prediction datasets have their unique evaluate way, we only provide two models, i.e. AutoBLM and ComplEX, to do evaluation. You can overwrite the two functions, i.e. `score_emb_sp_given_negs` and `score_emb_po_given_negs`, to adapt other models.
+Since the OGB link prediction datasets have their unique evaluate way, we only provide two models, i.e. AutoBLM and ComplEX, to do evaluation. You can overwrite the two functions, i.e. `score_emb_sp_given_negs` and `score_emb_po_given_negs`, to adapt other models.
 
 
 
@@ -53,7 +53,7 @@ Due to the OGB link prediction datasets have their unique evaluate way, we only 
 
 Original [paper](https://ieeexplore.ieee.org/document/9729658) and [code](https://github.com/AutoML-Research/AutoSF).
 
-You can conduct AutoBLM bilevel search by setting `search.type` as `blm` and setting model as `autoblm`. For example, you have a [blm_search_easy.yaml](example/FB15k-237/blm_search_easy.yaml) config file:
+You can conduct the scoring function search algorithm AutoBLM by setting `search.type` as `blm` and setting model as `autoblm`. For example, you have a [blm_search_easy.yaml](example/FB15k-237/blm_search_easy.yaml) config file:
 
 ```yaml
 job.type: search
