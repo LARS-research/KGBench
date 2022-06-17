@@ -14,7 +14,7 @@ ax_search:
   num_sobol_trials: 40
   num_trials: 150  
   parameters: 
-    - name: 1vsAll.rp_lambda
+    - name: 1vsAll.relation_prediction_weight
       type: range
       bounds: [0.0, 1.0]
     - name: lookup_embedder.regularize_weight

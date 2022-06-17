@@ -1,12 +1,12 @@
 from setuptools import setup
 
 setup(
-    name="libkge",
+    name="kgbench",
     version="0.1",
-    description="A knowledge graph embedding library",
-    url="https://github.com/uma-pi1/kge",
-    author="Universität Mannheim",
-    author_email="rgemulla@uni-mannheim.de",
+    description="A KGE toolbox featured with AutoML",
+    url="https://github.com/AutoML-Research/KGBench",
+    author="Lin Li",
+    author_email="lli18@mails.tsinghua.edu.cn",
     packages=["kgbench"],
     install_requires=[
         "numpy==1.19.*",

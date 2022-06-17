@@ -129,7 +129,7 @@ dataset:
 # Python modules that should be searched for models, embedders, jobs, etc.
 # LibKGE may not respect the module order specified here, so make sure to use
 # unique names. See also options 'import' and 'model' below.
-modules: [ kge.job, kge.model, kge.model.embedder ]
+modules: [ kgbench.job, kgbench.model, kgbench.model.embedder ]
 
 # Names of additional configuration files to import. When this entry contains
 # entry NAME, then the modules above are searched for a file NAME.yaml, and this
@@ -190,7 +190,7 @@ train:
   # BCE is used), these individual losses are summed up.
   #
   # LibKGE also supports some other losses, which we do not recommend to use.
-  # See kge/loss.py for details.
+  # See kgbench/loss.py for details.
   loss: kl
 
   # Argument of loss function (if any). If .nan is specified, a default value is
@@ -248,7 +248,7 @@ train:
     # Parameters are named by their variable names and can be retrieved by:
     # model.named_parameters()
     # or from a checkpoint by:
-    # kge dump checkpoint checkpoint_file.pt | grep parameter_names
+    # kgbench dump checkpoint checkpoint_file.pt | grep parameter_names
     +++: +++
 
   # If >0, linearly increase learning rate over this many epochs to

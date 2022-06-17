@@ -109,7 +109,7 @@ def module_base_dir(module_name):
 
 
 def kge_base_dir():
-    return module_base_dir("kge")
+    return module_base_dir("kgbench")
 
 
 def filename_in_module(module_or_module_list, filename):

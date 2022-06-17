@@ -1,4 +1,4 @@
-from kgbench.model.kgbench_model import KgeModel, KgeEmbedder
+from kgbench.model.kge_model import KgeModel, KgeEmbedder
 
 # embedders
 from kgbench.model.embedder.lookup_embedder import LookupEmbedder
