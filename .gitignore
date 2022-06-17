@@ -4,6 +4,6 @@
 !/data/wikikg2/wikikg2_proc.pyc
 /dataset
 /toss
-/examples
+/example
 *.pyc
 *__pycache__/
