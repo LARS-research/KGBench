@@ -1,4 +1,4 @@
-# Instruction
+# README
 Here is the instruction of AutoBLM, KGTuner, Relation Prediction and Node Piece.
 ## AutoBLM: Scoring Function Search
 
