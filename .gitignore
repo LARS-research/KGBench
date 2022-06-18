@@ -4,7 +4,6 @@
 !/data/wikikg2/wikikg2_proc.pyc
 /dataset
 /kgtuner
-/example
 *.pyc
 *__pycache__/
 /.vscode

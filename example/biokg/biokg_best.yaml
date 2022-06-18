@@ -1,9 +1,29 @@
 job.type: train
-dataset.name: biokg
 model: autoblm
 
 import:
 - autoblm
+
+dataset:
+  files.test.filename: test.del
+  files.test.size: 162870
+  files.test.split_type: test
+  files.test.type: triples_and_negs
+  files.test.neg_for_head: 500
+  files.test.neg_for_tail: 500
+  files.train.filename: train.del
+  files.train.size: 4762678
+  files.train.split_type: train
+  files.train.type: triples
+  files.valid.filename: valid.del
+  files.valid.size: 162886
+  files.valid.split_type: valid
+  files.valid.type: triples_and_negs
+  files.valid.neg_for_head: 500
+  files.valid.neg_for_tail: 500
+  name: biokg
+  num_entities: 93773
+  num_relations: 51
 
 autoblm:
   A:
@@ -32,6 +52,13 @@ lookup_embedder:
   dim: 2048
   dropout: 0.15
   regularize_weight: 2.3547438951949114e-06
+  initialize: normal_
+  initialize_args:
+    normal_:
+      mean: 0.0
+      std: 0.1
+  regularize_args:
+    p: 3
 
 
 train:
@@ -44,7 +71,15 @@ train:
       type: Adagrad
   trace_level: epoch
   type: 1vsAll
+  auto_correct: false
+  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler_args:
+    +++: +++
+    mode: max
+    patience: 4
 
 valid:
   metric: mean_reciprocal_rank
+  early_stopping:
+    patience: 0
 

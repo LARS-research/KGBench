@@ -4,7 +4,7 @@ model: complex
 
 1vsAll:
   relation_prediction: true
-  rp_lambda: 0.08730111582385243
+  relation_prediction_weight: 0.08730111582385243
 
 complex:
   entity_embedder:
@@ -24,17 +24,21 @@ lookup_embedder:
   initialize_args:
     uniform_:
       a: -0.28148249060722197
+  regularize_args:
+    p: 3
+    weighted: false
 
 
 
 train:
   batch_size: 1024
+  auto_correct: true
+  lr_scheduler: ReduceLROnPlateau
   lr_scheduler_args:
     factor: 0.95
     mode: max
     patience: 5
     threshold: 0.0001
-  lr_warmup: 0
   max_epochs: 400
   optimizer:
     default:

@@ -25,6 +25,9 @@ lookup_embedder:
   initialize_args:
     uniform_:
       a: -0.8328168489829233
+  regularize_args:
+    p: 3
+    weighted: true
 
 reciprocal_relations_model:
   base_model:
@@ -32,6 +35,8 @@ reciprocal_relations_model:
 
 train:
   batch_size: 512
+  auto_correct: true
+  lr_scheduler: ReduceLROnPlateau
   lr_scheduler_args:
     factor: 0.95
     mode: max

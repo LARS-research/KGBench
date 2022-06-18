@@ -1,9 +1,29 @@
 job.type: train
-dataset.name: wikikg2
 model: autoblm
 
 import:
 - autoblm
+
+dataset:
+  files.test.filename: test.del
+  files.test.size: 598543
+  files.test.split_type: test
+  files.test.type: triples_and_negs
+  files.test.neg_for_head: 500
+  files.test.neg_for_tail: 500
+  files.train.filename: train.del
+  files.train.size: 16109182
+  files.train.split_type: train
+  files.train.type: triples
+  files.valid.filename: valid.del
+  files.valid.size: 429456
+  files.valid.split_type: valid
+  files.valid.type: triples_and_negs
+  files.valid.neg_for_head: 500
+  files.valid.neg_for_tail: 500
+  name: wikikg2
+  num_entities: 2500604
+  num_relations: 535
 
 autoblm:
   A:
@@ -28,6 +48,13 @@ lookup_embedder:
   dim: 256
   dropout: 0.1
   regularize_weight: 4.56797381733809e-07
+  initialize: normal_
+  initialize_args:
+    normal_:
+      mean: 0.0
+      std: 0.1
+  regularize_args:
+    p: 3
 
 train:
   batch_size: 512
@@ -39,6 +66,14 @@ train:
       type: Adagrad
   trace_level: epoch
   type: 1vsAll
+  auto_correct: false
+  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler_args:
+    +++: +++
+    mode: max
+    patience: 4
 
 valid:
   metric: mean_reciprocal_rank
+  early_stopping:
+    patience: 0
